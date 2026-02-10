@@ -1,7 +1,7 @@
 // src/app/upload/actions.ts
 "use server";
 
-import pdf from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { db } from "@/lib/db-config";
 import { documents } from "@/lib/db-schema";
 import { generateEmbeddings } from "@/lib/embeddings";
@@ -12,9 +12,12 @@ export async function processPdfFile(formData: FormData) {
     const file = formData.get("pdf") as File;
 
     // Convert File to Buffer and extract text
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const data = await pdf(buffer);
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const parser = new PDFParse(uint8Array);
+
+    const data = await parser.getText();
+    await parser.destroy();
 
     if (!data.text || data.text.trim().length === 0) {
       return {
